@@ -572,7 +572,7 @@ export const words9  = [
   "эстакада"
 ];
 
-export const words  = [
+export const words10  = [
   "пристыдить",
   "беспрекословно",
   "беспрепятственный",
