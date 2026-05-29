@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { words9, words10 } from "../data/words";
+import { words } from "../data/words";
 
 const SESSION_SIZE = 10;
 
 export default function Home() {
-  const [mode, setMode] = useState<"9" | "10">("9");
-
   const [sessionWords, setSessionWords] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -30,9 +28,7 @@ export default function Home() {
   }
 
   function startSession() {
-    const baseWords = mode === "9" ? words9 : words10;
-
-    const selected = shuffle(baseWords).slice(0, SESSION_SIZE);
+    const selected = shuffle(words).slice(0, SESSION_SIZE);
 
     setSessionWords(selected);
     setCurrentIndex(0);
@@ -48,28 +44,23 @@ export default function Home() {
   function checkWord() {
     if (finished) return;
 
-    const user = input.trim().toLowerCase();
-    const correct = currentWord.trim().toLowerCase();
+    const ok =
+      input.trim().toLowerCase() === currentWord.trim().toLowerCase();
 
-    const ok = user === correct;
+    const newErrors = ok ? errors : [...errors, currentWord];
 
-    let newErrors = errors;
-
-    if (!ok) {
-      newErrors = [...errors, currentWord];
-      setErrors(newErrors);
-      setResult(`❌ ${currentWord}`);
-    } else {
-      setResult("✅ Правильно");
-    }
+    if (!ok) setResult(`❌ ${currentWord}`);
+    else setResult("✅ Правильно");
 
     const next = currentIndex + 1;
 
     if (next >= SESSION_SIZE) {
       setFinished(true);
+      setErrors(newErrors);
       return;
     }
 
+    setErrors(newErrors);
     setCurrentIndex(next);
 
     const nextWord = sessionWords[next];
@@ -81,17 +72,14 @@ export default function Home() {
 
   useEffect(() => {
     startSession();
-  }, [mode]);
+  }, []);
 
   if (finished) {
     return (
-      <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-6 px-4">
+      <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
+        <h1 className="text-3xl">Готово 🎉</h1>
 
-        <h1 className="text-3xl font-bold">Сессия завершена 🎉</h1>
-
-        <div className="text-xl">Ошибки:</div>
-
-        <ul className="text-red-400 text-lg">
+        <ul className="text-red-400 mt-4">
           {errors.length === 0 ? (
             <li>нет ошибок 🔥</li>
           ) : (
@@ -101,86 +89,43 @@ export default function Home() {
 
         <button
           onClick={startSession}
-          className="bg-white text-black px-6 py-3 rounded-xl font-bold"
+          className="mt-6 bg-white text-black px-6 py-3"
         >
-          начать заново
+          заново
         </button>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-6 px-4">
+    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-6">
 
-      {/* MODE SELECT */}
-      <div className="flex gap-3 mb-4">
-        <button
-          onClick={() => setMode("9")}
-          className={`px-4 py-2 rounded-xl ${
-            mode === "9" ? "bg-white text-black" : "bg-zinc-800"
-          }`}
-        >
-          9 задание
-        </button>
+      <div>{currentIndex} / {SESSION_SIZE}</div>
 
-        <button
-          onClick={() => setMode("10")}
-          className={`px-4 py-2 rounded-xl ${
-            mode === "10" ? "bg-white text-black" : "bg-zinc-800"
-          }`}
-        >
-          ПРЕ / ПРИ
-        </button>
-      </div>
-
-      {/* PROGRESS */}
-      <div className="text-xl">
-        {currentIndex} / {SESSION_SIZE}
-      </div>
-
-      {/* SOUND */}
-      <button
-        onClick={() => speakWord(currentWord)}
-        className="text-6xl"
-      >
+      <button onClick={() => speakWord(currentWord)} className="text-6xl">
         🔊
       </button>
 
-      {/* INPUT */}
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && checkWord()}
-        autoCorrect="off"
-        autoCapitalize="none"
-        spellCheck={false}
-        inputMode="text"
-        className="bg-zinc-900 px-4 py-3 text-2xl rounded-xl w-full max-w-xl"
-        placeholder="введите слово"
-      />
+    <input
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && checkWord()}
+      autoCorrect="off"
+      autoCapitalize="none"
+      spellCheck={false}
+      inputMode="text"
+      className="bg-zinc-900 px-4 py-3 text-2xl"
+      placeholder="слово"
+    />
 
-      {/* RESULT */}
-      <div className="text-2xl h-10">
-        {result}
-      </div>
+      <div>{result}</div>
 
-      {/* BUTTONS */}
-      <div className="flex gap-4">
-        <button
-          onClick={checkWord}
-          className="bg-white text-black px-6 py-3 rounded-xl font-bold"
-        >
-          проверить
-        </button>
-
-        <button
-          onClick={startSession}
-          className="bg-zinc-800 px-6 py-3 rounded-xl"
-        >
-          заново
-        </button>
-      </div>
-
+      <button
+        onClick={checkWord}
+        className="bg-white text-black px-4 py-2"
+      >
+        проверить
+      </button>
     </main>
   );
 }
