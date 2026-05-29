@@ -5,9 +5,6 @@ import { words } from "../data/words";
 
 const SESSION_SIZE = 10;
 
-console.log("WINDOW:", window);
-console.log("TELEGRAM:", (window as any).Telegram);
-
 export default function Home() {
   const [sessionWords, setSessionWords] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -19,41 +16,29 @@ export default function Home() {
   const [errors, setErrors] = useState<string[]>([]);
   const [finished, setFinished] = useState(false);
 
-  // --------------------
-  // INIT TELEGRAM (ВАЖНО)
-  // --------------------
+  // INIT TELEGRAM
   useEffect(() => {
     const tg = (window as any)?.Telegram?.WebApp;
+
+    console.log("TG INIT:", tg);
 
     if (tg) {
       tg.ready();
       tg.expand();
-      console.log("WEBAPP INIT:", tg);
-    } else {
-      console.log("NOT IN TELEGRAM");
     }
   }, []);
 
-  // --------------------
-  // TTS
-  // --------------------
   function speakWord(word: string) {
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = "ru-RU";
-    utterance.rate = 0.9;
-    speechSynthesis.speak(utterance);
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = "ru-RU";
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
   }
 
-  // --------------------
-  // shuffle
-  // --------------------
-  function shuffle(array: string[]) {
-    return [...array].sort(() => Math.random() - 0.5);
+  function shuffle(arr: string[]) {
+    return [...arr].sort(() => Math.random() - 0.5);
   }
 
-  // --------------------
-  // start session
-  // --------------------
   function startSession() {
     const selected = shuffle(words).slice(0, SESSION_SIZE);
 
@@ -68,49 +53,39 @@ export default function Home() {
     speakWord(selected[0]);
   }
 
-  // --------------------
-  // send to telegram
-  // --------------------
   function sendToTelegram(finalErrors: string[]) {
     const tg = (window as any)?.Telegram?.WebApp;
 
+    console.log("SEND TG:", tg);
+
     if (!tg) {
-      console.log("NOT TELEGRAM WEBAPP");
+      alert("НЕ TELEGRAM");
       return;
     }
 
-    const accuracy = Math.round(
-      ((SESSION_SIZE - finalErrors.length) / SESSION_SIZE) * 100
-    );
-
     tg.sendData(
       JSON.stringify({
-        accuracy,
+        accuracy: Math.round(
+          ((SESSION_SIZE - finalErrors.length) / SESSION_SIZE) * 100
+        ),
         errors: finalErrors,
         total: SESSION_SIZE,
       })
     );
   }
 
-  // --------------------
-  // check word
-  // --------------------
   function checkWord() {
     if (finished) return;
 
     const ok =
-      input.trim().toLowerCase() ===
-      currentWord.trim().toLowerCase();
+      input.trim().toLowerCase() === currentWord.trim().toLowerCase();
 
-    let newErrors = [...errors];
+    const newErrors = ok
+      ? errors
+      : [...errors, currentWord];
 
-    if (!ok) {
-      newErrors.push(currentWord);
-      setErrors(newErrors);
-      setResult(`❌ ${currentWord}`);
-    } else {
-      setResult("✅ Правильно");
-    }
+    if (!ok) setResult(`❌ ${currentWord}`);
+    else setResult("✅ Правильно");
 
     const next = currentIndex + 1;
 
@@ -120,105 +95,66 @@ export default function Home() {
       return;
     }
 
-    const nextWord = sessionWords[next];
-
+    setErrors(newErrors);
     setCurrentIndex(next);
-    setCurrentWord(nextWord);
-    setInput("");
-    setResult("");
 
+    const nextWord = sessionWords[next];
+    setCurrentWord(nextWord);
+
+    setInput("");
     speakWord(nextWord);
   }
 
-  // --------------------
-  // init session
-  // --------------------
   useEffect(() => {
     startSession();
   }, []);
 
-  // --------------------
-  // FINISH
-  // --------------------
   if (finished) {
     return (
-      <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-6 px-4">
-        <h1 className="text-3xl font-bold">Сессия завершена 🎉</h1>
+      <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
+        <h1 className="text-3xl">Готово 🎉</h1>
 
-        <div className="text-xl">Ошибки:</div>
-
-        <ul className="text-red-400 text-lg">
-          {errors.length === 0 ? (
-            <li>нет ошибок 🔥</li>
-          ) : (
-            errors.map((e, i) => <li key={i}>{e}</li>)
-          )}
+        <ul className="text-red-400 mt-4">
+          {errors.map((e, i) => (
+            <li key={i}>{e}</li>
+          ))}
         </ul>
 
         <button
           onClick={startSession}
-          className="bg-white text-black px-6 py-3 rounded-xl font-bold"
+          className="mt-6 bg-white text-black px-6 py-3"
         >
-          начать заново
+          заново
         </button>
       </main>
     );
   }
 
-  // --------------------
-  // UI
-  // --------------------
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-8 px-4">
+    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-6">
 
-      {/* DEBUG */}
-      <div className="text-xs text-gray-400">
-        {typeof window !== "undefined"
-          ? String((window as any)?.Telegram?.WebApp ? "TG OK" : "NO TG")
-          : "SSR"}
-      </div>
+      <div>{currentIndex} / {SESSION_SIZE}</div>
 
-      {/* progress */}
-      <div className="text-xl">
-        {currentIndex} / {SESSION_SIZE}
-      </div>
-
-      {/* sound */}
-      <button onClick={() => speakWord(currentWord)} className="text-7xl">
+      <button onClick={() => speakWord(currentWord)} className="text-6xl">
         🔊
       </button>
 
-      {/* input */}
       <input
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") checkWord();
-        }}
-        className="bg-zinc-900 border border-zinc-700 px-5 py-4 text-3xl rounded-xl w-full max-w-xl"
-        placeholder="Введите слово"
+        onKeyDown={(e) => e.key === "Enter" && checkWord()}
+        className="bg-zinc-900 px-4 py-3 text-2xl"
+        placeholder="слово"
       />
 
-      {/* result */}
-      <div className="text-3xl h-10">{result}</div>
+      <div>{result}</div>
 
-      {/* buttons */}
-      <div className="flex gap-4">
-        <button
-          onClick={checkWord}
-          className="bg-white text-black px-6 py-3 rounded-xl font-bold"
-        >
-          проверить
-        </button>
-
-        <button
-          onClick={startSession}
-          className="bg-zinc-800 px-6 py-3 rounded-xl"
-        >
-          заново
-        </button>
-      </div>
-
+      <button
+        onClick={checkWord}
+        className="bg-white text-black px-4 py-2"
+      >
+        проверить
+      </button>
     </main>
   );
 }
