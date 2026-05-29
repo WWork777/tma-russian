@@ -19,9 +19,16 @@ export default function Home() {
   const [finished, setFinished] = useState(false);
 
   function speakWord(word: string) {
-    const u = new SpeechSynthesisUtterance(word);
+    const broken = word
+      .split("")
+      .join(" ");
+
+    const u = new SpeechSynthesisUtterance(broken);
+
     u.lang = "ru-RU";
-    u.rate = 0.9;
+    u.rate = 0.8;
+    u.pitch = 0.9;
+
     speechSynthesis.speak(u);
   }
 
