@@ -106,13 +106,17 @@ export default function Home() {
         🔊
       </button>
 
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && checkWord()}
-        className="bg-zinc-900 px-4 py-3 text-2xl"
-        placeholder="слово"
-      />
+    <input
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && checkWord()}
+      autoCorrect="off"
+      autoCapitalize="none"
+      spellCheck={false}
+      inputMode="text"
+      className="bg-zinc-900 px-4 py-3 text-2xl"
+      placeholder="слово"
+    />
 
       <div>{result}</div>
 
