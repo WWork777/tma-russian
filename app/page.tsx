@@ -12,6 +12,7 @@ export default function Home() {
 
   const [index, setIndex] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
+  const [queue, setQueue] = useState<string[]>([]);
   const [finished, setFinished] = useState(false);
 
   function speakWord(word: string) {
@@ -22,25 +23,33 @@ export default function Home() {
   }
 
   function getRandomWord() {
-    const randomWord =
-      words[Math.floor(Math.random() * words.length)];
+    let word: string;
 
-    setCurrentWord(randomWord);
+    if (queue.length > 0) {
+      word = queue[0];
+      setQueue(prev => prev.slice(1));
+    } else {
+      word = words[Math.floor(Math.random() * words.length)];
+    }
+
+    setCurrentWord(word);
     setInput("");
     setResult("");
 
-    speakWord(randomWord);
+    speakWord(word);
   }
 
   function checkWord() {
     if (finished) return;
 
-    const correct =
-      input.toLowerCase().trim() ===
-      currentWord.toLowerCase().trim();
+    const userAnswer = input.trim().toLowerCase();
+    const correctAnswer = currentWord.trim().toLowerCase();
+
+    const correct = userAnswer === correctAnswer;
 
     if (!correct) {
       setErrors(prev => [...prev, currentWord]);
+      setQueue(prev => [...prev, currentWord]);
       setResult(`❌ ${currentWord}`);
     } else {
       setResult("✅ Правильно");
@@ -67,11 +76,11 @@ export default function Home() {
       <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-6 px-4">
         <h1 className="text-3xl font-bold">Сессия закончена 🎉</h1>
 
-        <p className="text-xl">
+        <div className="text-xl">
           Ошибки:
-        </p>
+        </div>
 
-        <ul className="text-lg text-red-400">
+        <ul className="text-red-400 text-lg">
           {errors.length === 0 ? (
             <li>нет ошибок 🔥</li>
           ) : (
@@ -84,6 +93,7 @@ export default function Home() {
           onClick={() => {
             setIndex(0);
             setErrors([]);
+            setQueue([]);
             setFinished(false);
             setResult("");
             setInput("");
@@ -100,11 +110,22 @@ export default function Home() {
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-8 px-4">
 
       {/* ПРОГРЕСС */}
-      <div className="text-xl">
-        {index} / {SESSION_SIZE}
+      <div className="w-full max-w-xl">
+        <div className="text-xl mb-2 text-center">
+          {index} / {SESSION_SIZE}
+        </div>
+
+        <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-white transition-all"
+            style={{
+              width: `${(index / SESSION_SIZE) * 100}%`
+            }}
+          />
+        </div>
       </div>
 
-      {/* КНОПКА ОЗВУЧКИ */}
+      {/* ОЗВУЧКА */}
       <button
         onClick={() => speakWord(currentWord)}
         className="text-7xl"
