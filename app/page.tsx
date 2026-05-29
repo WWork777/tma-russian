@@ -16,18 +16,6 @@ export default function Home() {
   const [errors, setErrors] = useState<string[]>([]);
   const [finished, setFinished] = useState(false);
 
-  // INIT TELEGRAM
-  useEffect(() => {
-    const tg = (window as any)?.Telegram?.WebApp;
-
-    console.log("TG INIT:", tg);
-
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
-  }, []);
-
   function speakWord(word: string) {
     const u = new SpeechSynthesisUtterance(word);
     u.lang = "ru-RU";
@@ -53,36 +41,13 @@ export default function Home() {
     speakWord(selected[0]);
   }
 
-  function sendToTelegram(finalErrors: string[]) {
-    const tg = (window as any)?.Telegram?.WebApp;
-
-    console.log("SEND TG:", tg);
-
-    if (!tg) {
-      alert("НЕ TELEGRAM");
-      return;
-    }
-
-    tg.sendData(
-      JSON.stringify({
-        accuracy: Math.round(
-          ((SESSION_SIZE - finalErrors.length) / SESSION_SIZE) * 100
-        ),
-        errors: finalErrors,
-        total: SESSION_SIZE,
-      })
-    );
-  }
-
   function checkWord() {
     if (finished) return;
 
     const ok =
       input.trim().toLowerCase() === currentWord.trim().toLowerCase();
 
-    const newErrors = ok
-      ? errors
-      : [...errors, currentWord];
+    const newErrors = ok ? errors : [...errors, currentWord];
 
     if (!ok) setResult(`❌ ${currentWord}`);
     else setResult("✅ Правильно");
@@ -91,7 +56,7 @@ export default function Home() {
 
     if (next >= SESSION_SIZE) {
       setFinished(true);
-      sendToTelegram(newErrors);
+      setErrors(newErrors);
       return;
     }
 
@@ -115,9 +80,11 @@ export default function Home() {
         <h1 className="text-3xl">Готово 🎉</h1>
 
         <ul className="text-red-400 mt-4">
-          {errors.map((e, i) => (
-            <li key={i}>{e}</li>
-          ))}
+          {errors.length === 0 ? (
+            <li>нет ошибок 🔥</li>
+          ) : (
+            errors.map((e, i) => <li key={i}>{e}</li>)
+          )}
         </ul>
 
         <button
