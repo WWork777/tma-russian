@@ -3,17 +3,6 @@
 import { useEffect, useState } from "react";
 import { words } from "../data/words";
 
-useEffect(() => {
-  const tg = (window as any).Telegram?.WebApp;
-
-  if (tg) {
-    tg.ready();
-    tg.expand();
-  }
-
-  console.log("WEBAPP INIT:", tg);
-}, []);
-
 const SESSION_SIZE = 10;
 
 export default function Home() {
@@ -26,6 +15,21 @@ export default function Home() {
 
   const [errors, setErrors] = useState<string[]>([]);
   const [finished, setFinished] = useState(false);
+
+  // --------------------
+  // INIT TELEGRAM (ВАЖНО)
+  // --------------------
+  useEffect(() => {
+    const tg = (window as any)?.Telegram?.WebApp;
+
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      console.log("WEBAPP INIT:", tg);
+    } else {
+      console.log("NOT IN TELEGRAM");
+    }
+  }, []);
 
   // --------------------
   // TTS
@@ -62,16 +66,13 @@ export default function Home() {
   }
 
   // --------------------
-  // Telegram send
+  // send to telegram
   // --------------------
   function sendToTelegram(finalErrors: string[]) {
-    
-    const tg = (window as any).Telegram?.WebApp;
-
-    console.log("TG OBJECT:", tg);
+    const tg = (window as any)?.Telegram?.WebApp;
 
     if (!tg) {
-      alert("НЕ ОТКРЫТО ЧЕРЕЗ TELEGRAM");
+      console.log("NOT TELEGRAM WEBAPP");
       return;
     }
 
@@ -79,7 +80,7 @@ export default function Home() {
       ((SESSION_SIZE - finalErrors.length) / SESSION_SIZE) * 100
     );
 
-    tg?.sendData(
+    tg.sendData(
       JSON.stringify({
         accuracy,
         errors: finalErrors,
@@ -98,8 +99,11 @@ export default function Home() {
       input.trim().toLowerCase() ===
       currentWord.trim().toLowerCase();
 
+    let newErrors = [...errors];
+
     if (!ok) {
-      setErrors((prev) => [...prev, currentWord]);
+      newErrors.push(currentWord);
+      setErrors(newErrors);
       setResult(`❌ ${currentWord}`);
     } else {
       setResult("✅ Правильно");
@@ -109,7 +113,7 @@ export default function Home() {
 
     if (next >= SESSION_SIZE) {
       setFinished(true);
-      sendToTelegram([...errors, ...(ok ? [] : [currentWord])]);
+      sendToTelegram(newErrors);
       return;
     }
 
@@ -124,14 +128,14 @@ export default function Home() {
   }
 
   // --------------------
-  // init
+  // init session
   // --------------------
   useEffect(() => {
     startSession();
   }, []);
 
   // --------------------
-  // FINISH SCREEN
+  // FINISH
   // --------------------
   if (finished) {
     return (
@@ -163,10 +167,12 @@ export default function Home() {
   // --------------------
   return (
     <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-8 px-4">
-            <div className="text-white text-sm">
+
+      {/* DEBUG */}
+      <div className="text-xs text-gray-400">
         {typeof window !== "undefined"
-          ? JSON.stringify((window as any).Telegram?.WebApp || {})
-          : "no window"}
+          ? String((window as any)?.Telegram?.WebApp ? "TG OK" : "NO TG")
+          : "SSR"}
       </div>
 
       {/* progress */}
@@ -175,10 +181,7 @@ export default function Home() {
       </div>
 
       {/* sound */}
-      <button
-        onClick={() => speakWord(currentWord)}
-        className="text-7xl"
-      >
+      <button onClick={() => speakWord(currentWord)} className="text-7xl">
         🔊
       </button>
 
