@@ -7,8 +7,7 @@ import Task12 from "./components/Task12";
 const SESSION_SIZE = 10;
 
 export default function Home() {
-  const [mode, setMode] = useState<"9" | "10">("9");
-
+  const [mode, setMode] = useState<"9" | "10" | "12">("9");
   const [sessionWords, setSessionWords] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -91,7 +90,9 @@ export default function Home() {
   }
 
   useEffect(() => {
-    startSession();
+    if (mode !== "12") {
+      startSession();
+    }
   }, [mode]);
   if (mode === "12") {
     return <Task12 />;
