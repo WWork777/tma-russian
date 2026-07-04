@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { words9, words10 } from "../data/words";
+import Task12 from "./components/Task12";
 
 const SESSION_SIZE = 10;
 
@@ -92,7 +93,9 @@ export default function Home() {
   useEffect(() => {
     startSession();
   }, [mode]);
-
+  if (mode === "12") {
+    return <Task12 />;
+  }
   if (finished) {
     return (
       <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-6 px-4">
@@ -140,6 +143,15 @@ export default function Home() {
           }`}
         >
           ПРЕ / ПРИ
+        </button>
+
+        <button
+          onClick={() => setMode("12")}
+          className={`px-4 py-2 rounded-xl ${
+            mode === "12" ? "bg-white text-black" : "bg-zinc-800"
+          }`}
+        >
+          12 задание
         </button>
       </div>
 
